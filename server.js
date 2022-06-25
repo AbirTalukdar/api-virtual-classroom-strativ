@@ -1,19 +1,21 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import adminRoutes from './routes/admin.js'
-import teacherRoutes from './routes/teacher.js'
-import studentRoutes from './routes/student.js'
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const AdminRouter = require("./api/admins/admin.router");
+const TeacherRouter = require("./api/teachers/teacher.router");
+const StudentRouter = require("./api/students/student.router");
 
 const app = express();
 
 app.use(bodyParser.json());
+app.use(express.json());
 app.get('/',(req,res)=>{
     res.send('Strativ Virtual Classroom API')
 })
-app.use('/admin', adminRoutes);
-app.use('/teacher', teacherRoutes);
-app.use('/student', studentRoutes);
+app.use('/api/admin', AdminRouter);
+app.use('/api/teacher', TeacherRouter);
+app.use('/api/student', StudentRouter);
 
-app.listen(4000, ()=>{
-    console.log("Server Running on http://localhost:4000")
+app.listen(process.env.APP_PORT, ()=>{
+    console.log("Server Running on http://localhost:",process.env.APP_PORT)
 })
