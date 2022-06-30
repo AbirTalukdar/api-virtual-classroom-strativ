@@ -1,4 +1,5 @@
 const { promisify } = require('util');
+const crypto = require('crypto')
 const jwt = require('jsonwebtoken');
 const models = require('../models')
 const Admin = require('../models/admin');
@@ -8,11 +9,8 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const bcrypt = require('bcrypt');
 
-const signToken = id => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN
-    });
-};
+
+//Admin Registration Function Start
 function adminSignup(req,res){
     models.Admin.findOne({where:{email:req.body.email}}).then(result=>{
         if(result){
@@ -47,6 +45,8 @@ function adminSignup(req,res){
         });
     });
 }
+
+// Admin Login
 function adminLogin(req,res){
     models.Admin.findOne({where:{email:req.body.email}}).then(admin=>{
         if(admin === null ){
@@ -58,7 +58,8 @@ function adminLogin(req,res){
                 if(result){
                     const token = jwt.sign({
                         email: admin.email,
-                        adminId: admin.id
+                        adminId: admin.id,
+                        role: 'admin'
                     },process.env.JWT_SECRET, function(err, token){
                         res.status(200).json({
                             message:"Authentication Sucessfull",
@@ -79,7 +80,7 @@ function adminLogin(req,res){
     })
 }
 //teacher create
-function teacherSignup(req,res){
+function createTeacher(req,res){
 
     models.Teacher.findOne({where:{email:req.body.email}}).then(result=>{
         if(result){
@@ -90,11 +91,11 @@ function teacherSignup(req,res){
             const generatedPassword = crypto.randomBytes(12).toString('hex');
             console.log("generated password for tacher is ", generatedPassword);
             bcrypt.genSalt(10,function(err,salt){
-                bcrypt.hash(req.body.generatedPassword, salt, function(err, hash){
+                bcrypt.hash(generatedPassword, salt, function(err, hash){
                     const teacher = {
                         name:req.body.name,
                         email:req.body.email,
-                        admin_id: req.body.admin_id,
+                        admin_id: req.user.adminId,
                         password: hash
                     }
                     models.Teacher.create(teacher).then(result => {
@@ -117,68 +118,105 @@ function teacherSignup(req,res){
         });
     });
 }
-exports.protect = (...user) => {
-    return async (req, res, next) => {
-      // 1) Getting token and check of it's there
-      let token;
-      if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-      ) {
-        token = req.headers.authorization.split(' ')[1];
-      }
-    
-      if (!token) {
-        return next(
-          new AppError('You are not logged in! Please log in to get access.', 401)
-        );
-      }
-    
-      // 2) Verification token
-      const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    
-      // 3) Check if user still exists
-      let currentUser;
-  
-      if(user.includes("teacher")){
-        currentUser = await User.findById(decoded.id);
-      }else if(user.includes("student")){
-        currentUser = await Student.findById(decoded.id);
-      }else{
-        console.log("no role matched");
-      }
-      
-      if (!currentUser) {
-        return next(
-          new AppError(
-            'The user belonging to this token does no longer exist.',
-            401
-          )
-        );
-      }
-    
-      // GRANT ACCESS TO PROTECTED ROUTE
-      req.user = currentUser;
-      next();
-    }
-  }
-  
-  
-  exports.restrictTo = (...roles) => {
-      return (req, res, next) => {
-      console.log("req user role is ", req.user.role);
-        if (!roles.includes(req.user.role)) {
-          return next(
-            new AppError('You do not have permission to perform this action', 403)
-          );
+//teacher Login
+function teacherLogin(req,res){
+    models.Teacher.findOne({where:{email:req.body.email}}).then(teacher=>{
+        if(teacher === null ){
+            res.status(401).json({
+                message:"Invalid Credentials",
+            })
+        }else{
+            bcrypt.compare(req.body.password, teacher.password, function(err, result){
+                if(result){
+                    const token = jwt.sign({
+                        email: teacher.email,
+                        teacherId: teacher.id,
+                        role: 'teacher',
+                    },process.env.JWT_SECRET, function(err, token){
+                        res.status(200).json({
+                            message:"Authentication Sucessfull",
+                            token: token
+                        })
+                    });
+                }else{
+                    res.status(401).json({
+                        message:"Invalid Credentials",
+                    })
+                }
+            })
         }
+    }).catch(error => {
+        res.status(500).json({
+            message:"Authentication failed"
+        })
+    })
+}
+// exports.protect = (...user) => {
+//     return async (req, res, next) => {
+//       // 1) Getting token and check of it's there
+//       let token;
+//       if (
+//         req.headers.authorization &&
+//         req.headers.authorization.startsWith('Bearer')
+//       ) {
+//         token = req.headers.authorization.split(' ')[1];
+//       }
     
-        next();
-      };
-  };
+//       if (!token) {
+//         return next(
+//           new AppError('You are not logged in! Please log in to get access.', 401)
+//         );
+//       }
+    
+//       // 2) Verification token
+//       const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    
+//       // 3) Check if user still exists
+//       let currentUser;
+  
+//       if(user.includes("admin")){
+//         currentUser = await models.Admin.findById(decoded.id);
+//       }else if(user.includes("teacher")){
+//         currentUser = await models.Teacher.findById(decoded.id);
+//       }else if(user.includes("student")){
+//         currentUser = await Student.findById(decoded.id);
+//       }else{
+//         console.log("no role matched");
+//       }
+      
+//       if (!currentUser) {
+//         return next(
+//           new AppError(
+//             'The user belonging to this token does no longer exist.',
+//             401
+//           )
+//         );
+//       }
+    
+//       // GRANT ACCESS TO PROTECTED ROUTE
+//       req.user = currentUser;
+//       next();
+//     }
+//   }
+  
+  
+//   exports.restrictTo = (...roles) => {
+//       return (req, res, next) => {
+//       console.log("req user role is ", req.user.role);
+//         if (!roles.includes(req.user.role)) {
+//           return next(
+//             new AppError('You do not have permission to perform this action', 403)
+//           );
+//         }
+    
+//         next();
+//       };
+//   };
 
 module.exports = {
     adminSignup: adminSignup,
     adminLogin: adminLogin,
-    teacherSignup: teacherSignup
+    createTeacher: createTeacher,
+    teacherLogin: teacherLogin,
+    // studentLogin: studentLogin,
 }
