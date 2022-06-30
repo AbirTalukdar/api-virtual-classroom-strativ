@@ -3,10 +3,8 @@ const express = require("express");
 const authController = require('../controllers/authController');
 const authenticator = require('../middleware/auth');
 
-const router = require("express").Router();
+const router = express.Router();
 
-// ** authController.protect('teacher') means it will query into the User(Teacher) model
-// ** authController.protect('student') means it will query into the Student model
 
 router.post('/teacher-login', authController.teacherLogin);
 

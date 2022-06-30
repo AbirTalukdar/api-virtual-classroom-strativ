@@ -83,11 +83,11 @@ function createTeacher(req,res){
                 message:"Teacher Email Already Exist"
             });
         }else{
-            const generatedPassword = crypto.randomBytes(12).toString('hex');
+            const generatedPassword = crypto.randomBytes(8).toString('hex');
             console.log("generated password for tacher is ", generatedPassword);
             const message = `
-            Congratulations you have been added in the Virtual Classroom as a Teacher.\n 
-            Please use this Password ${generatedPassword} to Login! 
+            Congratulations\n you have been added in the Virtual Classroom as a Teacher. 
+            Your Password ${generatedPassword} for Login virtual classroom! 
             `
             bcrypt.genSalt(10,function(err,salt){
                 bcrypt.hash(generatedPassword, salt, function(err, hash){
