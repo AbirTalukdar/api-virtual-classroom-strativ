@@ -1,10 +1,10 @@
 {
   "development": {
-    "username": "root",
-    "password": null,
-    "database": "strativ_virtual_classroom",
+    "username": "postgres",
+    "password": "24308",
+    "database": "virtual_classroom",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "postgres"
   },
   "test": {
     "username": "root",
