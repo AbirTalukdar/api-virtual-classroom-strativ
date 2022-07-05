@@ -20,6 +20,6 @@ app.use('/api/admin', AdminRouter);
 app.use('/api/teacher', TeacherRouter);
 app.use('/api/classroom', ClassroomRouter);
 app.use('/api/exam', ExamRouter);
-app.listen(process.env.APP_PORT, ()=>{
-    console.log("Server Running on http://localhost:",process.env.APP_PORT)
+app.listen(process.env.PORT || process.env.APP_PORT, ()=>{
+    console.log("Server Running on http://localhost:",`${process.env.APP_PORT}`)
 })
